@@ -1,0 +1,11 @@
+﻿Secure API - local end-to-end verification (2026-10-19)
+1) POST /auth/login (valid) ............ 200 + JWT issued
+2) POST /auth/login (wrong pwd) ........ HTTP 401
+3) GET  /api/data (valid JWT) .......... HTTP 200
+4) GET  /api/data?username=' OR '1'='1' -- ... HTTP 200, data=[] (SQLi neutralized)
+5) POST /api/posts <script>alert(1)</script> .. content escaped: &lt;script&gt;alert(1)&lt;/script&gt;
+6) GET  /api/posts ..................... stored content escaped (XSS prevented)
+7) GET  /api/profile (valid JWT) ....... {"username":"testuser"}
+Automated tests: 13 passed
+Bandit (SAST): 0 issues on app.py
+pip-audit (SCA): No known vulnerabilities

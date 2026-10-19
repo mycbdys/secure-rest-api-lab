@@ -1,0 +1,64 @@
+# CI/CD pipeline — SAST + SCA + tests
+# Runs on every push and every pull request.
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+
+jobs:
+  security-and-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      # ---- SAST: Bandit (static application security testing) -------------
+      # Production code is scanned. (Test files use assert/hard-coded test
+      # credentials which Bandit flags as false positives, so they are not
+      # part of the SAST target.)
+      - name: SAST - Bandit scan
+        run: |
+          bandit -r app.py -f txt | tee bandit.log
+          bandit -r app.py -f html -o bandit-report.html
+        # Bandit exits non-zero if High/Medium confidence issues are found,
+        # so a clean codebase is what makes this step pass.
+
+      # ---- SCA: pip-audit (software composition / dependency analysis) ----
+      - name: SCA - pip-audit dependency check
+        run: |
+          pip-audit -r requirements.txt -f json -o pip-audit-report.json
+          pip-audit -r requirements.txt -f text | tee pip-audit.log
+        # pip-audit exits non-zero when any dependency has a known
+        # vulnerability, so passing means no known vulnerable packages.
+
+      - name: Run automated tests
+        run: |
+          pytest -v
+
+      # ---- Upload reports as artifacts (visible under Actions) ------------
+      - name: Upload Bandit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bandit-report
+          path: bandit-report.html
+
+      - name: Upload pip-audit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pip-audit-report
+          path: pip-audit-report.json
