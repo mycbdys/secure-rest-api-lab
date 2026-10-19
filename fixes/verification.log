@@ -1,0 +1,12 @@
+﻿CVE-2017-12615 verification log (2026-10-19)
+============================================
+Environment: vulhub/tomcat:8.5.19 (Docker), port 8080
+
+VULNERABLE (readonly=false):
+  PUT /1.jsp/  -> HTTP 204 (JSP webshell written via trailing-slash bypass)
+  GET /1.jsp   -> HTTP 200, body: uid=0(root) gid=0(root) groups=0(root)  [RCE as root]
+
+FIXED (readonly=true, rebuilt image):
+  GET /        -> HTTP 200  (regression OK, main functionality intact)
+  PUT /1.jsp/  -> HTTP 403  (write blocked, attack rejected)
+  GET /1.jsp   -> HTTP 404  (no webshell present, exploit no longer works)
