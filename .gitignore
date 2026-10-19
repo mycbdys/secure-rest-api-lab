@@ -21,3 +21,5 @@ pip-audit.log
 Thumbs.db
 .vscode/
 .idea/
+
+server*.log
